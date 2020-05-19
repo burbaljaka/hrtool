@@ -4,7 +4,7 @@ import requests
 #Path input from user
 # print('Input a path to the base')
 # path = input()
-path = "C:\\Users\\burbaljaka\\Downloads\\Тестовое задание Python\\Тестовое задание\\Тестовая база.xlsx"
+path = "C:\\Users\\tim\\Downloads\\Тестовое задание Python\\Тестовое задание\\Тестовая база.xlsx"
 workbook = xlrd.open_workbook(path)
 
 #Getting path to the DB folder
@@ -38,22 +38,48 @@ print('Нашел {} кандидатов, {} позиций'.format(len(data), 
 url = 'https://dev-100-api.huntflow.ru/'
 
 token = '71e89e8af02206575b3b4ae80bf35b6386fe3085af3d4085cbc7b43505084482'
-
 headers = {'Authorization': 'Bearer '+token}
 
 response = requests.get(url+'accounts', headers=headers)
 account_id = json.loads(response.text)['items'][0]['id']
+print(account_id)
 
 #Getting a list of account vacancies
 print('Получаю список вакансий')
 response = requests.get(url+'account/{}/vacancies/'.format(account_id), headers=headers)
 vacancies_response = json.loads((response.text).encode('utf-8'))['items']
 
+print(vacancies_response)
+
+#Getting a list of vacancies names
+vac_names = []
+for vac in vacancies_response:
+    vac_names.append(vac['position'])
+
+print(vac_names)
+uploading_result = {}
+uploading_headers = headers
+uploading_headers['X-File-Parse'] = 'true'
+uploading_url = url + 'account/{}/upload'.format(account_id)
+items = []
 #Scanning db folder to get CV of applicants for appropriate position
 with os.scandir(db_folder_path) as dir_entries:
-    result = {}
+    # file_to_upload = os.path.join(db_folder_path, 'Frontend-разработчик', 'Глибин Виталий Николаевич.doc')
+    # print(file_to_upload)
+    # files = [('file', open(file_to_upload, 'rb'))]
+
+    # file_sent = requests.request('POST', uploading_url, files=files, headers=uploading_headers)
+    # file_sent = requests.post('http://httpbin.org/post', files=files, headers=uploading_headers)
+    # print(file_sent.text)
+    # print(file_sent.json()['headers'])
     for entry in dir_entries:
+        print(entry.name)
+        if entry.name in vac_names:
+            with os.scandir(os.path.join(db_folder_path, entry.name)) as subdir_entries:
+                for folder in subdir_entries:
+                    items.append(folder)
 
-
-
-for vac in vacancies_response:
+for elem in items:
+    print(elem)
+    file_sent = requests.request("POST", uploading_url, files={'file': open(elem.path, 'rb')}, data={}, headers=uploading_headers)
+    print(file_sent.text)
