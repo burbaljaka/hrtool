@@ -5,9 +5,15 @@ import requests
 # print('Input a path to the base')
 # path = input()
 path = "C:\\Users\\tim\\Downloads\\Тестовое задание Python\\Тестовое задание\\Тестовая база.xlsx"
+#C:\Users\tim\Downloads\Тестовое задание Python\Тестовое задание\Тестовая база.xlsx
+
 workbook = xlrd.open_workbook(path)
 
 #Getting path to the DB folder
+# db_folder_list = path.split(os.sep)[0:-1]
+# db_folder_path = ''
+# for part in db_folder_list:
+#     os.path.join(db_folder_path,part)
 db_folder_list = path.split('\\')[0:-1]
 db_folder_path = ''
 for i in range(len(db_folder_list)):
@@ -15,6 +21,7 @@ for i in range(len(db_folder_list)):
         db_folder_path += db_folder_list[i]
     else:
         db_folder_path += '\\' + db_folder_list[i]
+print(db_folder_path)
 #opening db file to get applicants
 worksheet = workbook.sheet_by_index(0)
 print('Обрабатываю базу')
@@ -38,7 +45,7 @@ print('Нашел {} кандидатов, {} позиций'.format(len(data), 
 url = 'https://dev-100-api.huntflow.ru/'
 
 token = '71e89e8af02206575b3b4ae80bf35b6386fe3085af3d4085cbc7b43505084482'
-headers = {'Authorization': 'Bearer '+token}
+headers = {'Authorization': 'Bearer '+token, 'User-Agent': 'App/1.0 (kapitonov.timur@gmail.com)'}
 
 response = requests.get(url+'accounts', headers=headers)
 account_id = json.loads(response.text)['items'][0]['id']
@@ -60,7 +67,9 @@ print(vac_names)
 uploading_result = {}
 uploading_headers = headers
 uploading_headers['X-File-Parse'] = 'true'
+uploading_headers['Accert-Encoding'] = 'gzip, deflate, br'
 uploading_url = url + 'account/{}/upload'.format(account_id)
+print(uploading_url)
 items = []
 #Scanning db folder to get CV of applicants for appropriate position
 with os.scandir(db_folder_path) as dir_entries:
@@ -80,6 +89,8 @@ with os.scandir(db_folder_path) as dir_entries:
                     items.append(folder)
 
 for elem in items:
-    print(elem)
-    file_sent = requests.request("POST", uploading_url, files={'file': open(elem.path, 'rb')}, data={}, headers=uploading_headers)
+    print(elem.path)
+    files = {'file': open(elem.path, 'rb')}
+    file_sent = requests.request("POST", uploading_url, files=files, data={}, headers=uploading_headers)
     print(file_sent.text)
+
